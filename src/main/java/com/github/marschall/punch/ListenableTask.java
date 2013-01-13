@@ -1,6 +1,7 @@
 package com.github.marschall.punch;
 
-import com.github.marschall.punch.PunchPool.PunchWorkerThread;
+import java.util.concurrent.ForkJoinPool;
+
 
 
 
@@ -13,18 +14,27 @@ abstract class ListenableTask extends RecoverableTask {
 
   @Override
   protected void compute() {
-    PunchWorkerThread punchWorker = (PunchWorkerThread) Thread.currentThread();
     if (!this.finished) {
-      punchWorker.listener.taskStarted(this.taskPath);
-      try {
+      ForkJoinPool pool = getPool();
+      if (pool instanceof PunchPool) {
+        // pool is not null and not a regular ForkJoinPool
+        computeAndNotifyListener(((PunchPool) pool).listener);
+      } else {
         safeCompute();
-      } catch (Throwable t) {
-        punchWorker.listener.taskFailed(this.taskPath);
-        throw t;
       }
-      punchWorker.listener.taskFinished(this.taskPath);
       this.finished = true;
     }
+  }
+
+  private void computeAndNotifyListener(TaskStateListener listener) {
+    listener.taskStarted(this.taskPath);
+    try {
+      safeCompute();
+    } catch (Throwable t) {
+      listener.taskFailed(this.taskPath);
+      throw t;
+    }
+    listener.taskFinished(this.taskPath);
   }
 
   @Override

@@ -2,6 +2,7 @@ package com.github.marschall.punch;
 
 import java.util.ArrayList;
 import java.util.Collection;
+import java.util.concurrent.ForkJoinPool;
 import java.util.concurrent.RecursiveAction;
 import java.util.concurrent.TimeUnit;
 
@@ -13,7 +14,7 @@ import org.junit.Test;
 
 public class PunchTest {
 
-  private PunchPool pool;
+  private ForkJoinPool pool;
 
   @Before
   public void before() {
