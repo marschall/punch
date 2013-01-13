@@ -35,8 +35,8 @@ public class DatabaseTest {
 
   @After
   public void after() throws InterruptedException {
-    this.db.shutdown();
     this.pool.awaitTermination(1, TimeUnit.HOURS);
+    this.db.shutdown();
   }
 
   @Test
