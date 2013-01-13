@@ -12,6 +12,7 @@ abstract class CompositeTask extends RecoverableTask {
 
   @Override
   void setTaskPath(TaskPath taskPath) {
+    super.setTaskPath(taskPath);
     int i = 0;
     for (RecoverableTask task : this.tasks) {
       task.setTaskPath(taskPath.add(i));
