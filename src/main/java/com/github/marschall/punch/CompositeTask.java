@@ -1,17 +1,15 @@
 package com.github.marschall.punch;
 
 import java.util.Collection;
-import java.util.concurrent.ForkJoinTask;
-import java.util.concurrent.RecursiveAction;
 
-public abstract class CompositeTask extends RecoverableTask {
+abstract class CompositeTask extends RecoverableTask {
 
   final Collection<RecoverableTask> tasks;
 
   public CompositeTask(Collection<RecoverableTask> tasks) {
     this.tasks = tasks;
   }
-  
+
   @Override
   void setTaskPath(TaskPath taskPath) {
     int i = 0;
@@ -20,7 +18,7 @@ public abstract class CompositeTask extends RecoverableTask {
       i += 1;
     }
   }
-  
+
   void ensureTaskPathSet() {
     // check-then act is thread safe here because it's executed before
     // the first top level task
@@ -28,7 +26,7 @@ public abstract class CompositeTask extends RecoverableTask {
       this.setTaskPath(TaskPath.root());
     }
   }
-  
+
   @Override
   public void recover(RecoveryService recoveryService) {
     this.ensureTaskPathSet();

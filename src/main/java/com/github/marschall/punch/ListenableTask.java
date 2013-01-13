@@ -2,9 +2,6 @@ package com.github.marschall.punch;
 
 import java.util.concurrent.ForkJoinPool;
 
-
-
-
 abstract class ListenableTask extends RecoverableTask {
   private volatile boolean finished;
 
