@@ -13,7 +13,7 @@ abstract class ListenableTask extends RecoverableTask {
   }
 
   @Override
-  protected void compute() {
+  protected final void compute() {
     if (!this.finished) {
       ForkJoinPool pool = getPool();
       if (pool instanceof PunchPool) {
@@ -26,7 +26,7 @@ abstract class ListenableTask extends RecoverableTask {
     }
   }
 
-  private void computeAndNotifyListener(TaskStateListener listener) {
+  void computeAndNotifyListener(TaskStateListener listener) {
     listener.taskStarted(this.taskPath);
     try {
       safeCompute();
