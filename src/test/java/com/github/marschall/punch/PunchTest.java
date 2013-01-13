@@ -124,7 +124,7 @@ public class PunchTest {
     
   }
 
-  static final class StringTask extends ListanableTask {
+  static final class StringTask extends ListenableTask {
 
     private final String s;
 
