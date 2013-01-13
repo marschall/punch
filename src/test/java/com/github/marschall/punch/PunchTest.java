@@ -24,12 +24,12 @@ public class PunchTest {
   @After
   public void after() throws InterruptedException {
     this.pool.shutdown();
-    this.pool.awaitTermination(1, TimeUnit.SECONDS);
+    this.pool.awaitTermination(1, TimeUnit.HOURS);
   }
 
   @Test
-  public void sample() {
-    this.pool.invoke(buildTopLevelTask());
+  public void batchSample() {
+    this.pool.invoke(this.buildFileOutRoot());
   }
 
   /**
@@ -53,41 +53,59 @@ public class PunchTest {
    * </pre>
    */
   private RecursiveAction buildTree() {
-    Collection<ForkJoinTask<?>> serial1 = buildSerialTasks(1, 2);
-    ForkJoinTask<?> serialTaskContainer1 = new SerialTaskContainer(serial1);
+    ForkJoinTask<?> serial1 = buildSerialTasks(1, 2);
     
     ForkJoinTask<?> singleTask = new StringTask("singleTask-1");
     
-    Collection<ForkJoinTask<?>> serial2 = buildSerialTasks(3, 2);
-    ForkJoinTask<?> serialTaskContainer2 = new SerialTaskContainer(serial2);
+    ForkJoinTask<?> serial2 = buildSerialTasks(3, 2);
 
     Collection<ForkJoinTask<?>> tasks = new ArrayList<>(3);
-    tasks.add(serialTaskContainer1);
+    tasks.add(serial1);
     tasks.add(singleTask);
-    tasks.add(serialTaskContainer2);
+    tasks.add(serial2);
     return new ParallelTaskContainer(tasks);
   }
 
-  private RecursiveAction buildTopLevelTask() {
-    Collection<ForkJoinTask<?>> tasks = new ArrayList<>(9);
-    tasks.addAll(buildSerialTasks(1, 4));
-    tasks.add(buildParallelTasks(1, 10));
-    tasks.addAll(buildSerialTasks(5, 4));
-    return new SerialTaskContainer(tasks);
-  }
-
-  private Collection<ForkJoinTask<?>> buildSerialTasks(int start, int numberOfTasks) {
+  private ForkJoinTask<?> buildSerialTasks(int start, int numberOfTasks) {
     Collection<ForkJoinTask<?>> tasks = new ArrayList<>(numberOfTasks);
     for (int i = start; i < start + numberOfTasks; i++) {
       tasks.add(new StringTask("serial-" + i));
     }
-    return tasks;
+    return new SerialTaskContainer(tasks);
+  }
+  
+  /**
+   * <pre>
+   * fileout-root
+   *  - tenants (parallel)
+   *    - tenant1 (sequential)
+   *      - staging (parallel)
+   *        - staging-job1
+   *        - staging-job2
+   *        - ...
+   *      - writing-job
+   *    - tenant2 (sequential)
+   *      ...
+   * </pre>
+   */
+  private ForkJoinTask<?> buildFileOutRoot() {
+    Collection<ForkJoinTask<?>> tasks = new ArrayList<>(2);
+    tasks.add(buildTenantJobs(1, 10));
+    tasks.add(buildTenantJobs(2, 5));
+    return new ParallelTaskContainer(tasks);
+  }
+  
+  private ForkJoinTask<?> buildTenantJobs(int tenant, int numberOfStagingJobs) {
+    Collection<ForkJoinTask<?>> tasks = new ArrayList<>(2);
+    tasks.add(buildStagingJobs(numberOfStagingJobs, tenant));
+    tasks.add(new StringTask("writing-job tenant-" + tenant));
+    return new SerialTaskContainer(tasks);
   }
 
-  private RecursiveAction buildParallelTasks(int start, int numberOfTasks) {
+  private ForkJoinTask<?> buildStagingJobs(int numberOfTasks, int tenant) {
     Collection<ForkJoinTask<?>> tasks = new ArrayList<>(numberOfTasks);
-    for (int i = start; i < start + numberOfTasks; i++) {
-      tasks.add(new StringTask("parallel-" + i));
+    for (int i = 0; i < numberOfTasks; i++) {
+      tasks.add(new StringTask("staging-job-" + i + " tenant-" + tenant));
     }
     return new ParallelTaskContainer(tasks);
   }
