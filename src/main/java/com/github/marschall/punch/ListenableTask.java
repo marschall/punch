@@ -1,26 +1,29 @@
 package com.github.marschall.punch;
 
+import com.github.marschall.punch.PunchPool.PunchWorkerThread;
+
+
 
 abstract class ListenableTask extends RecoverableTask {
-
-  private final TaskStateListener listener;
-  
   private volatile boolean finished;
-  
-  ListenableTask(TaskStateListener listener) {
-    this.listener = listener;
+
+  ListenableTask() {
     this.finished = false;
   }
-  
+
   @Override
   protected void compute() {
+    PunchWorkerThread punchWorker = (PunchWorkerThread) Thread.currentThread();
     if (!this.finished) {
-      this.preCompute();
-      this.listener.taskStarted(taskPath);
-      this.safeCompute();
-      this.listener.taskFinished(taskPath);
+      punchWorker.listener.taskStarted(this.taskPath);
+      try {
+        safeCompute();
+      } catch (Throwable t) {
+        punchWorker.listener.taskFailed(this.taskPath);
+        throw t;
+      }
+      punchWorker.listener.taskFinished(this.taskPath);
       this.finished = true;
-      this.postCompute();
     }
   }
 
@@ -28,15 +31,7 @@ abstract class ListenableTask extends RecoverableTask {
   void recover(RecoveryService recoveryService) {
     this.finished = recoveryService.isFinished(this.taskPath);
   }
-  
+
   abstract void safeCompute();
-
-  protected void postCompute() {
-    // eg. close transaction
-  }
-
-  protected void preCompute() {
-    // eg. open transaction
-  }
 
 }
