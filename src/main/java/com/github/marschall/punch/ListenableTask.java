@@ -1,42 +1,47 @@
 package com.github.marschall.punch;
 
+import java.util.concurrent.ForkJoinPool;
+
+
+
 
 abstract class ListenableTask extends RecoverableTask {
-
-  private final TaskStateListener listener;
-  
   private volatile boolean finished;
-  
-  ListenableTask(TaskStateListener listener) {
-    this.listener = listener;
+
+  ListenableTask() {
     this.finished = false;
   }
-  
+
   @Override
-  protected void compute() {
+  protected final void compute() {
     if (!this.finished) {
-      this.preCompute();
-      this.listener.taskStarted(taskPath);
-      this.safeCompute();
-      this.listener.taskFinished(taskPath);
+      ForkJoinPool pool = getPool();
+      if (pool instanceof PunchPool) {
+        // pool is not null and not a regular ForkJoinPool
+        computeAndNotifyListener(((PunchPool) pool).listener);
+      } else {
+        safeCompute();
+      }
       this.finished = true;
-      this.postCompute();
     }
+  }
+
+  void computeAndNotifyListener(TaskStateListener listener) {
+    listener.taskStarted(this.taskPath);
+    try {
+      safeCompute();
+    } catch (Throwable t) {
+      listener.taskFailed(this.taskPath);
+      throw t;
+    }
+    listener.taskFinished(this.taskPath);
   }
 
   @Override
   void recover(RecoveryService recoveryService) {
     this.finished = recoveryService.isFinished(this.taskPath);
   }
-  
+
   abstract void safeCompute();
-
-  protected void postCompute() {
-    // eg. close transaction
-  }
-
-  protected void preCompute() {
-    // eg. open transaction
-  }
 
 }

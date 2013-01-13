@@ -3,7 +3,6 @@ package com.github.marschall.punch;
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.concurrent.ForkJoinPool;
-import java.util.concurrent.ForkJoinTask;
 import java.util.concurrent.RecursiveAction;
 import java.util.concurrent.TimeUnit;
 
@@ -12,13 +11,14 @@ import org.junit.Before;
 import org.junit.Test;
 
 
+
 public class PunchTest {
 
   private ForkJoinPool pool;
 
   @Before
   public void before() {
-    this.pool = new ForkJoinPool();
+    this.pool = new PunchPool(NullListener.INSTANCE);
   }
 
   @After
@@ -54,9 +54,7 @@ public class PunchTest {
    */
   private RecursiveAction buildTree() {
     RecoverableTask serial1 = buildSerialTasks(1, 2);
-    
-    RecoverableTask singleTask = new StringTask(NullListener.INSTANCE, "singleTask-1");
-    
+    RecoverableTask singleTask = new StringTask("singleTask-1");
     RecoverableTask serial2 = buildSerialTasks(3, 2);
 
     Collection<RecoverableTask> tasks = new ArrayList<>(3);
@@ -69,11 +67,11 @@ public class PunchTest {
   private RecoverableTask buildSerialTasks(int start, int numberOfTasks) {
     Collection<RecoverableTask> tasks = new ArrayList<>(numberOfTasks);
     for (int i = start; i < start + numberOfTasks; i++) {
-      tasks.add(new StringTask(NullListener.INSTANCE, "serial-" + i));
+      tasks.add(new StringTask("serial-" + i));
     }
     return new SerialTaskContainer(tasks);
   }
-  
+
   /**
    * <pre>
    * fileout-root
@@ -94,42 +92,50 @@ public class PunchTest {
     tasks.add(buildTenantJobs(2, 5));
     return new ParallelTaskContainer(tasks);
   }
-  
+
   private RecoverableTask buildTenantJobs(int tenant, int numberOfStagingJobs) {
     Collection<RecoverableTask> tasks = new ArrayList<>(2);
     tasks.add(buildStagingJobs(numberOfStagingJobs, tenant));
-    tasks.add(new StringTask(NullListener.INSTANCE, "writing-job tenant-" + tenant));
+    tasks.add(new StringTask("writing-job tenant-" + tenant));
     return new SerialTaskContainer(tasks);
   }
 
   private RecoverableTask buildStagingJobs(int numberOfTasks, int tenant) {
     Collection<RecoverableTask> tasks = new ArrayList<>(numberOfTasks);
     for (int i = 0; i < numberOfTasks; i++) {
-      tasks.add(new StringTask(NullListener.INSTANCE, "staging-job-" + i + " tenant-" + tenant));
+      tasks.add(new StringTask("staging-job-" + i + " tenant-" + tenant));
     }
     return new ParallelTaskContainer(tasks);
   }
-  
+
   enum NullListener implements TaskStateListener {
-    
+
     INSTANCE;
 
     @Override
     public void taskStarted(TaskPath path) {
+      print(path, "started");
     }
-
     @Override
     public void taskFinished(TaskPath path) {
+      print(path, "finished");
     }
-    
+    @Override
+    public void taskFailed(TaskPath path) {
+      print(path, "failed");
+    }
+
+    private void print(TaskPath path, String whatHappened) {
+      System.out.println("task " + path + " " + whatHappened);
+    }
+
   }
 
   static final class StringTask extends ListenableTask {
 
     private final String s;
 
-    StringTask(TaskStateListener listener, String s) {
-      super(listener);
+    StringTask(String s) {
       this.s = s;
     }
 
