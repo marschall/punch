@@ -4,12 +4,10 @@ import java.util.Collection;
 import java.util.concurrent.ForkJoinTask;
 import java.util.concurrent.RecursiveAction;
 
-public class SerialTaskContainer extends RecursiveAction {
-
-  private Collection<ForkJoinTask<?>> tasks;
+public class SerialTaskContainer extends CompositeTask {
 
   public SerialTaskContainer(Collection<ForkJoinTask<?>> tasks) {
-    this.tasks = tasks;
+    super(tasks);
   }
 
   @Override
