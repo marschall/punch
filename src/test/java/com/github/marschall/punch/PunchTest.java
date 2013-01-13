@@ -8,7 +8,6 @@ import org.junit.Before;
 import org.junit.Test;
 
 
-
 public class PunchTest {
 
   private ForkJoinPool pool;
@@ -49,6 +48,7 @@ public class PunchTest {
     public void taskFinished(TaskPath path) {
       print(path, "finished");
     }
+
     @Override
     public void taskFailed(TaskPath path) {
       print(path, "failed");

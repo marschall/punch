@@ -2,7 +2,7 @@ package com.github.marschall.punch;
 
 import java.util.Collection;
 
-public abstract class CompositeTask extends RecoverableTask {
+abstract class CompositeTask extends RecoverableTask {
 
   final Collection<RecoverableTask> tasks;
 
