@@ -53,23 +53,23 @@ public class PunchTest {
    * </pre>
    */
   private RecursiveAction buildTree() {
-    ForkJoinTask<?> serial1 = buildSerialTasks(1, 2);
+    RecoverableTask serial1 = buildSerialTasks(1, 2);
     
-    ForkJoinTask<?> singleTask = new StringTask("singleTask-1");
+    RecoverableTask singleTask = new StringTask(NullListener.INSTANCE, "singleTask-1");
     
-    ForkJoinTask<?> serial2 = buildSerialTasks(3, 2);
+    RecoverableTask serial2 = buildSerialTasks(3, 2);
 
-    Collection<ForkJoinTask<?>> tasks = new ArrayList<>(3);
+    Collection<RecoverableTask> tasks = new ArrayList<>(3);
     tasks.add(serial1);
     tasks.add(singleTask);
     tasks.add(serial2);
     return new ParallelTaskContainer(tasks);
   }
 
-  private ForkJoinTask<?> buildSerialTasks(int start, int numberOfTasks) {
-    Collection<ForkJoinTask<?>> tasks = new ArrayList<>(numberOfTasks);
+  private RecoverableTask buildSerialTasks(int start, int numberOfTasks) {
+    Collection<RecoverableTask> tasks = new ArrayList<>(numberOfTasks);
     for (int i = start; i < start + numberOfTasks; i++) {
-      tasks.add(new StringTask("serial-" + i));
+      tasks.add(new StringTask(NullListener.INSTANCE, "serial-" + i));
     }
     return new SerialTaskContainer(tasks);
   }
@@ -88,38 +88,53 @@ public class PunchTest {
    *      ...
    * </pre>
    */
-  private ForkJoinTask<?> buildFileOutRoot() {
-    Collection<ForkJoinTask<?>> tasks = new ArrayList<>(2);
+  private RecoverableTask buildFileOutRoot() {
+    Collection<RecoverableTask> tasks = new ArrayList<>(2);
     tasks.add(buildTenantJobs(1, 10));
     tasks.add(buildTenantJobs(2, 5));
     return new ParallelTaskContainer(tasks);
   }
   
-  private ForkJoinTask<?> buildTenantJobs(int tenant, int numberOfStagingJobs) {
-    Collection<ForkJoinTask<?>> tasks = new ArrayList<>(2);
+  private RecoverableTask buildTenantJobs(int tenant, int numberOfStagingJobs) {
+    Collection<RecoverableTask> tasks = new ArrayList<>(2);
     tasks.add(buildStagingJobs(numberOfStagingJobs, tenant));
-    tasks.add(new StringTask("writing-job tenant-" + tenant));
+    tasks.add(new StringTask(NullListener.INSTANCE, "writing-job tenant-" + tenant));
     return new SerialTaskContainer(tasks);
   }
 
-  private ForkJoinTask<?> buildStagingJobs(int numberOfTasks, int tenant) {
-    Collection<ForkJoinTask<?>> tasks = new ArrayList<>(numberOfTasks);
+  private RecoverableTask buildStagingJobs(int numberOfTasks, int tenant) {
+    Collection<RecoverableTask> tasks = new ArrayList<>(numberOfTasks);
     for (int i = 0; i < numberOfTasks; i++) {
-      tasks.add(new StringTask("staging-job-" + i + " tenant-" + tenant));
+      tasks.add(new StringTask(NullListener.INSTANCE, "staging-job-" + i + " tenant-" + tenant));
     }
     return new ParallelTaskContainer(tasks);
   }
+  
+  enum NullListener implements TaskStateListener {
+    
+    INSTANCE;
 
-  static final class StringTask extends RecursiveAction {
+    @Override
+    public void taskStarted(TaskPath path) {
+    }
+
+    @Override
+    public void taskFinished(TaskPath path) {
+    }
+    
+  }
+
+  static final class StringTask extends ListanableTask {
 
     private final String s;
 
-    StringTask(String s) {
+    StringTask(TaskStateListener listener, String s) {
+      super(listener);
       this.s = s;
     }
 
     @Override
-    protected void compute() {
+    protected void safeCompute() {
       System.out.println(this.s);
     }
 

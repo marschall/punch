@@ -6,12 +6,13 @@ import java.util.concurrent.RecursiveAction;
 
 public class SerialTaskContainer extends CompositeTask {
 
-  public SerialTaskContainer(Collection<ForkJoinTask<?>> tasks) {
+  public SerialTaskContainer(Collection<RecoverableTask> tasks) {
     super(tasks);
   }
 
   @Override
   protected void compute() {
+    this.ensureTaskPathSet();
     for (ForkJoinTask<?> task : this.tasks) {
       task.invoke();
     }

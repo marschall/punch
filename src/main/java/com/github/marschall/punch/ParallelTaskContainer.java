@@ -5,12 +5,13 @@ import java.util.concurrent.ForkJoinTask;
 
 public class ParallelTaskContainer extends CompositeTask {
 
-  public ParallelTaskContainer(Collection<ForkJoinTask<?>> tasks) {
+  public ParallelTaskContainer(Collection<RecoverableTask> tasks) {
     super(tasks);
   }
 
   @Override
   protected void compute() {
+    this.ensureTaskPathSet();
     invokeAll(this.tasks);
   }
 
