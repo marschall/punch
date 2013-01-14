@@ -1,8 +1,5 @@
 package com.github.marschall.punch;
 
-import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.assertTrue;
-
 import java.sql.ResultSet;
 import java.sql.SQLException;
 import java.util.HashSet;
@@ -27,6 +24,9 @@ import org.springframework.transaction.TransactionDefinition;
 import org.springframework.transaction.TransactionStatus;
 import org.springframework.transaction.support.DefaultTransactionDefinition;
 
+import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertTrue;
+
 public class DatabaseTest {
 
   private JdbcTemplate jdbcTemplate;
@@ -43,7 +43,9 @@ public class DatabaseTest {
 
     this.jdbcTemplate = new JdbcTemplate(this.db);
     PlatformTransactionManager transactionManager = new DataSourceTransactionManager(this.db);
-    this.pool = new PunchPool(new PersistingTaskStateListener(this.jdbcTemplate, transactionManager));
+    TaskStateListener taskStateListener = new PersistingTaskStateListener(this.jdbcTemplate, transactionManager);
+    DatabaseRecoveryService recoveryService = new DatabaseRecoveryService(this.jdbcTemplate);
+    this.pool = new PunchPool(taskStateListener, recoveryService);
   }
 
   @After
@@ -137,16 +139,6 @@ public class DatabaseTest {
     }
   }
 
-  static class TaskState {
-    TaskPath taskPath;
-    String taskStatus;
-
-    TaskState(String taskPath, String taskStatus) {
-      this.taskPath = TaskPath.fromString(taskPath);
-      this.taskStatus = taskStatus;
-    }
-  }
-
   static enum TaskPathRowMapper implements RowMapper<TaskPath> {
 
     INSTANCE;
@@ -158,14 +150,4 @@ public class DatabaseTest {
 
   }
 
-  static enum TaskStateRowMapper implements RowMapper<TaskState> {
-
-    INSTANCE;
-
-    @Override
-    public TaskState mapRow(ResultSet rs, int rowNum) throws SQLException {
-      return new TaskState(rs.getString("TASK_PATH"), rs.getString("TASK_STATE"));
-    }
-
-  }
 }

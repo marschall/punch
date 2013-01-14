@@ -1,13 +1,13 @@
 package com.github.marschall.punch;
 
-import static org.junit.Assert.assertTrue;
-
 import java.util.concurrent.ForkJoinPool;
 import java.util.concurrent.TimeUnit;
 
 import org.junit.After;
 import org.junit.Before;
 import org.junit.Test;
+
+import static org.junit.Assert.assertTrue;
 
 
 public class PunchTest {
@@ -16,7 +16,7 @@ public class PunchTest {
 
   @Before
   public void before() {
-    this.pool = new PunchPool(NullListener.INSTANCE);
+    this.pool = new PunchPool(NullListener.INSTANCE, AlwaysFinishedRecoveryService.INSTANCE);
   }
 
   @After
@@ -58,6 +58,16 @@ public class PunchTest {
 
     private void print(TaskPath path, String whatHappened) {
       System.out.println("task " + path + " " + whatHappened);
+    }
+
+  }
+
+  enum AlwaysFinishedRecoveryService implements RecoveryService {
+    INSTANCE;
+
+    @Override
+    public boolean isFinished(TaskPath path) {
+      return true;
     }
 
   }

@@ -10,7 +10,7 @@ public class SerialTaskContainer extends CompositeTask {
   }
 
   @Override
-  protected void compute() {
+  protected void safeCompute() {
     this.ensureTaskPathSet();
     for (ForkJoinTask<?> task : this.tasks) {
       task.invoke();

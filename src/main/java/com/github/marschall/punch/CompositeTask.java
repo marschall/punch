@@ -20,17 +20,8 @@ abstract class CompositeTask extends RecoverableTask {
     }
   }
 
-  void ensureTaskPathSet() {
-    // check-then act is thread safe here because it's executed before
-    // the first top level task
-    if (this.taskPath == null) {
-      this.setTaskPath(TaskPath.root());
-    }
-  }
-
   @Override
   public void recover(RecoveryService recoveryService) {
-    this.ensureTaskPathSet();
     for (RecoverableTask task : this.tasks) {
       task.recover(recoveryService);
     }

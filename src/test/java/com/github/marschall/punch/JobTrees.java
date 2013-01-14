@@ -73,7 +73,7 @@ class JobTrees {
     return new ParallelTaskContainer(tasks);
   }
 
-  static final class StringTask extends ListenableTask {
+  static final class StringTask extends RecoverableTask {
 
     private final String s;
 
