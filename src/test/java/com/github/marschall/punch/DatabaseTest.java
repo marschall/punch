@@ -2,7 +2,11 @@ package com.github.marschall.punch;
 
 import java.sql.ResultSet;
 import java.sql.SQLException;
+import java.util.HashSet;
+import java.util.List;
+import java.util.Set;
 import java.util.concurrent.TimeUnit;
+import java.util.concurrent.atomic.AtomicReference;
 
 import org.junit.After;
 import org.junit.Before;
@@ -50,6 +54,41 @@ public class DatabaseTest {
     assertEquals(17, finishedCount);
   }
 
+  static class DatabaseRecoveryService implements RecoveryService {
+
+    private static final String SELECT_TASK_PATH = "SELECT task_path FROM t_task_state WHERE task_state = 'FINISHED'";
+
+    private final JdbcTemplate jdbcTemplate;
+
+    private final AtomicReference<Set<TaskPath>> finishedTasks;
+
+    public DatabaseRecoveryService(JdbcTemplate jdbcTemplate) {
+      this.jdbcTemplate = jdbcTemplate;
+      this.finishedTasks = new AtomicReference<>();
+    }
+
+    private Set<TaskPath> getFinishedTasks() {
+      Set<TaskPath> set = this.finishedTasks.get();
+      if (set != null) {
+        return set;
+      }
+      List<TaskPath> list = this.jdbcTemplate.query(SELECT_TASK_PATH, TaskPathRowMapper.INSTANCE);
+      set = new HashSet<>(list);
+      boolean success = this.finishedTasks.compareAndSet(null, set);
+      if (success) {
+        return set;
+      } else {
+        return this.finishedTasks.get();
+      }
+    }
+
+    @Override
+    public boolean isFinished(TaskPath path) {
+      return this.getFinishedTasks().contains(path);
+    }
+
+  }
+
   static class PersistingTaskStateListener implements TaskStateListener {
 
     private static final String INSERT_TASK_SQL = "INSERT INTO t_task_state(task_path, task_state) VALUES (?, ?)";
@@ -85,6 +124,17 @@ public class DatabaseTest {
       this.taskPath = TaskPath.fromString(taskPath);
       this.taskStatus = taskStatus;
     }
+  }
+
+  static enum TaskPathRowMapper implements RowMapper<TaskPath> {
+
+    INSTANCE;
+
+    @Override
+    public TaskPath mapRow(ResultSet rs, int rowNum) throws SQLException {
+      return TaskPath.fromString(rs.getString("TASK_PATH"));
+    }
+
   }
 
   static enum TaskStateRowMapper implements RowMapper<TaskState> {
