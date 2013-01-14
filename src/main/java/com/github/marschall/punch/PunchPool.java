@@ -2,7 +2,6 @@ package com.github.marschall.punch;
 
 import java.util.concurrent.ForkJoinPool;
 
-
 public final class PunchPool extends ForkJoinPool {
 
   final TaskStateListener listener;
