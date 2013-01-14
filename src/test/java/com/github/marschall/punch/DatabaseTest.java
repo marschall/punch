@@ -17,8 +17,6 @@ import org.springframework.jdbc.core.JdbcTemplate;
 import org.springframework.jdbc.core.RowMapper;
 import org.springframework.jdbc.datasource.DataSourceTransactionManager;
 import org.springframework.jdbc.datasource.embedded.EmbeddedDatabase;
-import org.springframework.jdbc.datasource.embedded.EmbeddedDatabaseBuilder;
-import org.springframework.jdbc.datasource.embedded.EmbeddedDatabaseType;
 import org.springframework.transaction.PlatformTransactionManager;
 import org.springframework.transaction.TransactionDefinition;
 import org.springframework.transaction.TransactionStatus;
@@ -35,9 +33,8 @@ public class DatabaseTest {
 
   @Before
   public void before() {
-    this.db = new EmbeddedDatabaseBuilder()
+    this.db = new H2DatabaseBuilder()
     .setName("punch-db")
-    .setType(EmbeddedDatabaseType.H2)
     .addScript("punch-db.sql")
     .build();
 
@@ -62,8 +59,8 @@ public class DatabaseTest {
     int totalTaskCount = this.jdbcTemplate.queryForInt("SELECT COUNT(*) FROM t_task_state");
     int finishedCount = this.jdbcTemplate.queryForInt("SELECT COUNT(*) FROM t_task_state WHERE task_state = 'FINISHED'");
 
-    assertEquals(17, totalTaskCount);
-    assertEquals(17, finishedCount);
+    assertEquals(22, totalTaskCount);
+    assertEquals(22, finishedCount);
   }
 
   static class DatabaseRecoveryService implements RecoveryService {
@@ -146,6 +143,32 @@ public class DatabaseTest {
     @Override
     public TaskPath mapRow(ResultSet rs, int rowNum) throws SQLException {
       return TaskPath.fromString(rs.getString("TASK_PATH"));
+    }
+
+  }
+
+  static class TaskState {
+    TaskPath taskPath;
+    String taskStatus;
+
+    TaskState(String taskPath, String taskStatus) {
+      this.taskPath = TaskPath.fromString(taskPath);
+      this.taskStatus = taskStatus;
+    }
+
+    @Override
+    public String toString() {
+      return String.format("| %10s | %10s |", this.taskPath, this.taskStatus);
+    }
+  }
+
+  static enum TaskStateRowMapper implements RowMapper<TaskState> {
+
+    INSTANCE;
+
+    @Override
+    public TaskState mapRow(ResultSet rs, int rowNum) throws SQLException {
+      return new TaskState(rs.getString("TASK_PATH"), rs.getString("TASK_STATE"));
     }
 
   }
