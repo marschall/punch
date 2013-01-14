@@ -1,5 +1,7 @@
 package com.github.marschall.punch;
 
+import static org.junit.Assert.assertTrue;
+
 import java.util.concurrent.ForkJoinPool;
 import java.util.concurrent.TimeUnit;
 
@@ -20,7 +22,7 @@ public class PunchTest {
   @After
   public void after() throws InterruptedException {
     this.pool.shutdown();
-    this.pool.awaitTermination(1, TimeUnit.HOURS);
+    assertTrue(this.pool.awaitTermination(1, TimeUnit.SECONDS));
   }
 
   @Test

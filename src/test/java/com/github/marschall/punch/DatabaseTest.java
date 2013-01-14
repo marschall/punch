@@ -1,5 +1,7 @@
 package com.github.marschall.punch;
 
+import static org.junit.Assert.assertEquals;
+
 import java.sql.ResultSet;
 import java.sql.SQLException;
 import java.util.HashSet;
@@ -23,8 +25,6 @@ import org.springframework.transaction.PlatformTransactionManager;
 import org.springframework.transaction.TransactionDefinition;
 import org.springframework.transaction.TransactionStatus;
 import org.springframework.transaction.support.DefaultTransactionDefinition;
-
-import static org.junit.Assert.assertEquals;
 
 public class DatabaseTest {
 
