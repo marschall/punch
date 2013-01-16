@@ -18,7 +18,7 @@ public class PunchTest {
 
   @Before
   public void before() {
-    this.pool = new PunchPool(NullListener.INSTANCE, AlwaysFinishedRecoveryService.INSTANCE);
+    this.pool = new PunchPool(DebugListener.INSTANCE, AlwaysFinishedRecoveryService.INSTANCE);
   }
 
   @After
@@ -38,6 +38,30 @@ public class PunchTest {
   @Test
   public void treeSample() {
     this.pool.invoke(JobTrees.buildTree());
+  }
+  
+  enum DebugListener implements TaskStateListener {
+
+    INSTANCE;
+
+    @Override
+    public void taskStarted(TaskPath path) {
+      print(path, "started");
+    }
+    @Override
+    public void taskFinished(TaskPath path) {
+      print(path, "finished");
+    }
+
+    @Override
+    public void taskFailed(TaskPath path) {
+      print(path, "failed");
+    }
+
+    private void print(TaskPath path, String whatHappened) {
+      System.out.println("task " + path + " " + whatHappened);
+    }
+
   }
 
   enum AlwaysFinishedRecoveryService implements RecoveryService {
