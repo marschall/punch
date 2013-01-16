@@ -3,7 +3,7 @@ package com.github.marschall.punch.core;
 import java.util.concurrent.ForkJoinPool;
 import java.util.concurrent.RecursiveAction;
 
-abstract class RecoverableTask extends RecursiveAction {
+public abstract class RecoverableTask extends RecursiveAction {
 
   volatile TaskPath taskPath;
   private volatile boolean finished;
