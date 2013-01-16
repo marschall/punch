@@ -4,12 +4,15 @@ import java.util.ArrayList;
 import java.util.Collection;
 import java.util.concurrent.RecursiveAction;
 
+import static com.github.marschall.punch.core.TaskTreeBuilder.parallel;
+import static com.github.marschall.punch.core.TaskTreeBuilder.serial;
+
 public final class JobTrees {
-  
+
   private JobTrees() {
     throw new AssertionError("not instantiable");
   }
-  
+
   /**
    * <pre>
    * parallel
@@ -23,15 +26,11 @@ public final class JobTrees {
    * </pre>
    */
   static RecursiveAction buildTree() {
-    RecoverableTask serial1 = buildSerialTasks(1, 2);
-    RecoverableTask singleTask = new StringTask("singleTask-1");
-    RecoverableTask serial2 = buildSerialTasks(3, 2);
-
-    Collection<RecoverableTask> tasks = new ArrayList<>(3);
-    tasks.add(serial1);
-    tasks.add(singleTask);
-    tasks.add(serial2);
-    return new ParallelTaskContainer(tasks);
+    return parallel(
+        buildSerialTasks(1, 2),
+        new StringTask("singleTask-1"),
+        buildSerialTasks(3, 2))
+        .build();
   }
 
   static RecoverableTask buildSerialTasks(int start, int numberOfTasks) {
@@ -57,17 +56,16 @@ public final class JobTrees {
    * </pre>
    */
   public static RecoverableTask buildFileOutRoot() {
-    Collection<RecoverableTask> tasks = new ArrayList<>(2);
-    tasks.add(buildTenantJobs(1, 10));
-    tasks.add(buildTenantJobs(2, 5));
-    return new ParallelTaskContainer(tasks);
-  }
-
-  private static RecoverableTask buildTenantJobs(int tenant, int numberOfStagingJobs) {
-    Collection<RecoverableTask> tasks = new ArrayList<>(2);
-    tasks.add(buildStagingJobs(numberOfStagingJobs, tenant));
-    tasks.add(new StringTask("writing-job tenant-" + tenant));
-    return new SerialTaskContainer(tasks);
+    return parallel(
+        serial(
+            buildStagingJobs(10, 1),
+            new StringTask("writing-job tenant-1")
+            ),
+            serial(
+                buildStagingJobs(5, 2),
+                new StringTask("writing-job tenant-2")
+                )
+        ).build();
   }
 
   private static RecoverableTask buildStagingJobs(int numberOfTasks, int tenant) {
