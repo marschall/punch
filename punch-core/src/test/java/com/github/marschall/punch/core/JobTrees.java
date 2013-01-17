@@ -29,8 +29,8 @@ public final class JobTrees {
     return parallel(
         buildSerialTasks(1, 2),
         new StringTask("singleTask-1"),
-        buildSerialTasks(3, 2))
-        .build();
+        buildSerialTasks(3, 2)
+    ).build();
   }
 
   static RecoverableTask buildSerialTasks(int start, int numberOfTasks) {
@@ -60,12 +60,12 @@ public final class JobTrees {
         serial(
             buildStagingJobs(10, 1),
             new StringTask("writing-job tenant-1")
-            ),
-            serial(
-                buildStagingJobs(5, 2),
-                new StringTask("writing-job tenant-2")
-                )
-        ).build();
+        ),
+        serial(
+            buildStagingJobs(5, 2),
+            new StringTask("writing-job tenant-2")
+        )
+    ).build();
   }
 
   private static RecoverableTask buildStagingJobs(int numberOfTasks, int tenant) {
