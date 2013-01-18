@@ -1,8 +1,8 @@
 package com.github.marschall.punch.core;
 
+import java.util.ArrayList;
 import java.util.Collection;
 import java.util.Collections;
-import java.util.Iterator;
 
 import org.junit.Test;
 
@@ -67,11 +67,11 @@ public class TaskTreeBuilderTest {
     // Check first level
     CompositeTask actualRoot = (CompositeTask) root;
     assertEquals(2, actualRoot.tasks.size());
-    assertTrue(getElementFromCollection(actualRoot.tasks, 0) instanceof ParallelTaskContainer);
-    assertEquals(getElementFromCollection(actualRoot.tasks, 1), task3);
+    assertTrue(elementAt(actualRoot.tasks, 0) instanceof ParallelTaskContainer);
+    assertEquals(elementAt(actualRoot.tasks, 1), task3);
 
     // Check second level
-    CompositeTask parallelTask = (CompositeTask) getElementFromCollection(actualRoot.tasks, 0);
+    CompositeTask parallelTask = (CompositeTask) elementAt(actualRoot.tasks, 0);
     assertThat(parallelTask.tasks, containsInAnyOrder(task1, task2));
   }
 
@@ -87,16 +87,8 @@ public class TaskTreeBuilderTest {
     assertThat(actualRoot.tasks, contains(task1, task2));
   }
 
-  private static <T> T getElementFromCollection(Collection<T> collection, int index) {
-    if (index > collection.size() - 1 || index < 0) {
-      throw new IndexOutOfBoundsException("Invalid index " + index + " for collection of size " + collection.size());
-    }
-    Iterator<T> iterator = collection.iterator();
-    T element = iterator.next();
-    for (int i = 0; i < index; i++) {
-      element = iterator.next();
-    }
-    return element;
+  private static <T> T elementAt(Collection<T> collection, int index) {
+    return new ArrayList<>(collection).get(index);
   }
 
   class DoNothingTask extends RecoverableTask {
