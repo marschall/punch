@@ -25,6 +25,16 @@ public class TaskPathTest {
     assertEquals(TaskPath.root().add(0).add(1), TaskPath.fromString("0/0/1"));
   }
 
+  @Test(expected = IllegalArgumentException.class)
+  public void fromStringEmpty() {
+    TaskPath.fromString("");
+  }
+
+  @Test(expected = NullPointerException.class)
+  public void fromStringNull() {
+    TaskPath.fromString(null);
+  }
+
   @Test
   public void equality() {
     assertEquals(TaskPath.root(), TaskPath.root());

@@ -55,29 +55,23 @@ public final class TaskPath {
   }
 
   public static TaskPath fromString(String string) {
-    String[] parts = string.split("/");
-    if (parts.length == 0) {
-      return TaskPath.root();
-    } else if (parts.length == 1) {
-      String part = parts[0];
-      if ("".equals(part)) {
-        return TaskPath.root();
-      }
-      return new TaskPath(Collections.singletonList(safeParse(string, part)));
-    } else {
-      List<Integer> elements = new ArrayList<>(parts.length);
-      for (String part : parts) {
-        elements.add(safeParse(string, part));
-      }
-      return new TaskPath(elements);
+    if (string == null) {
+      throw new NullPointerException("Invalid taskpath: null");
     }
+    String[] parts = string.split("/");
+    List<Integer> elements = new ArrayList<>(parts.length);
+    for (String part : parts) {
+      elements.add(safeParse(string, part));
+    }
+    return new TaskPath(elements);
   }
 
   private static int safeParse(String originalInput, String element) {
     try {
       return Integer.parseInt(element);
     } catch (NumberFormatException e) {
-      throw new IllegalArgumentException(originalInput + " isn't valid because it contains " + element + " which can't parsed as an int ");
+      throw new IllegalArgumentException(
+          "'" + originalInput + "' isn't valid because it contains '" + element + "' which can't parsed as an int");
     }
   }
 
