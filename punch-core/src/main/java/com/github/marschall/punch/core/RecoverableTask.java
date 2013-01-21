@@ -2,8 +2,11 @@ package com.github.marschall.punch.core;
 
 import java.util.concurrent.ForkJoinPool;
 import java.util.concurrent.RecursiveAction;
+import java.util.concurrent.atomic.AtomicInteger;
 
 public abstract class RecoverableTask extends RecursiveAction {
+
+  private static final AtomicInteger nextTaskGroup = new AtomicInteger(0);
 
   volatile TaskPath taskPath;
   private volatile boolean finished;
@@ -37,7 +40,8 @@ public abstract class RecoverableTask extends RecursiveAction {
     // check-then act is thread safe here because it's executed before
     // the first top level task
     if (this.taskPath == null) {
-      this.setTaskPath(TaskPath.root());
+      int taskGroup = nextTaskGroup.getAndIncrement();
+      this.setTaskPath(TaskPath.root(taskGroup));
     }
   }
 
