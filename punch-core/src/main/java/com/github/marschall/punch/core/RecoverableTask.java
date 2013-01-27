@@ -2,11 +2,8 @@ package com.github.marschall.punch.core;
 
 import java.util.concurrent.ForkJoinPool;
 import java.util.concurrent.RecursiveAction;
-import java.util.concurrent.atomic.AtomicInteger;
 
 public abstract class RecoverableTask extends RecursiveAction {
-
-  private static final AtomicInteger nextTaskGroup = new AtomicInteger(0);
 
   volatile TaskPath taskPath;
   private volatile boolean finished;
@@ -22,11 +19,11 @@ public abstract class RecoverableTask extends RecursiveAction {
   @Override
   protected final void compute() {
     if (!this.finished) {
-      this.ensureTaskPathSet();
       ForkJoinPool pool = getPool();
       if (pool instanceof PunchPool) {
         // pool is not null and not a regular ForkJoinPool
         PunchPool punchPool = (PunchPool) pool;
+        this.ensureTaskPathSet(punchPool.recoveryService);
         recover(punchPool.recoveryService);
         computeAndNotifyListener(punchPool.listener);
       } else {
@@ -36,12 +33,11 @@ public abstract class RecoverableTask extends RecursiveAction {
     }
   }
 
-  void ensureTaskPathSet() {
+  void ensureTaskPathSet(RecoveryService recoveryService) {
     // check-then act is thread safe here because it's executed before
     // the first top level task
     if (this.taskPath == null) {
-      int taskGroup = nextTaskGroup.getAndIncrement();
-      this.setTaskPath(TaskPath.root(taskGroup));
+      this.setTaskPath(TaskPath.root(recoveryService.newTaskGroup()));
     }
   }
 

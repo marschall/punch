@@ -21,6 +21,6 @@ package com.github.marschall.punch.core;
  *  - #getDescription() on listanble task
  *  - pass task to listener
  *  - execution ID:
- *    - TaskPath.root() is not 0 but a per-VM unique ID identifying a task tree
- *    - this ID might be used in the task state listener to correlate a task with the task tree it belongs to
+ *    - TaskPath.root() is not 0 but a unique ID identifying a task tree.
+ *      This will make the TaskPath a globally unique key.
  */
