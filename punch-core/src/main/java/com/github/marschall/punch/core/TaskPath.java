@@ -19,10 +19,6 @@ public final class TaskPath {
     return new TaskPath(newElements);
   }
 
-  public int getRoot() {
-    return this.elements.get(0);
-  }
-
   public static TaskPath root(int taskGroup) {
     return new TaskPath(Collections.singletonList(taskGroup));
   }
