@@ -9,5 +9,7 @@ package com.github.marschall.punch.jdbc;
  * Things to consider:
  *
  * Open issues:
- * - DatabaseRecoveryService: Tasks that were finished after the first call of getFinishedTasks() won't be found
+ * - DatabaseRecoveryService:
+ *   - Result of getFinishedTasks() may be huge
+ *   - Tasks that were finished after the first call of getFinishedTasks() won't be found
  */

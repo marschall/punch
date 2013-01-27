@@ -24,30 +24,30 @@ import com.github.marschall.punch.core.TaskPath;
 
 public class DatabaseRecoveryService implements RecoveryService {
 
-  private static final String SELECT_TASK_PATH = "SELECT task_path FROM t_task_state WHERE task_state != 'FINISHED'";
+  private static final String SELECT_TASK_PATH = "SELECT task_path FROM t_task_state WHERE task_state = 'FINISHED'";
   private static final String CREATE_NEW_TASK_GROUP = "SELECT seq_task_state.nextval FROM DUAL";
 
   private final JdbcTemplate jdbcTemplate;
 
-  private final AtomicReference<Set<TaskPath>> unfinishedTasks;
+  private final AtomicReference<Set<TaskPath>> finishedTasks;
 
   public DatabaseRecoveryService(JdbcTemplate jdbcTemplate) {
     this.jdbcTemplate = jdbcTemplate;
-    this.unfinishedTasks = new AtomicReference<>();
+    this.finishedTasks = new AtomicReference<>();
   }
 
   private Set<TaskPath> getFinishedTasks() {
-    Set<TaskPath> set = this.unfinishedTasks.get();
+    Set<TaskPath> set = this.finishedTasks.get();
     if (set != null) {
       return set;
     }
     List<TaskPath> list = this.jdbcTemplate.query(SELECT_TASK_PATH, TaskPathRowMapper.INSTANCE);
     set = new HashSet<>(list);
-    boolean success = this.unfinishedTasks.compareAndSet(null, set);
+    boolean success = this.finishedTasks.compareAndSet(null, set);
     if (success) {
       return set;
     } else {
-      return this.unfinishedTasks.get();
+      return this.finishedTasks.get();
     }
   }
 
@@ -59,7 +59,7 @@ public class DatabaseRecoveryService implements RecoveryService {
 
   @Override
   public boolean isFinished(TaskPath path) {
-    return !this.getFinishedTasks().contains(path);
+    return getFinishedTasks().contains(path);
   }
 
 
