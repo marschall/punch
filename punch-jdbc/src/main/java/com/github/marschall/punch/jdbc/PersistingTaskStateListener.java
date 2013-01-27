@@ -32,8 +32,12 @@ public class PersistingTaskStateListener implements TaskStateListener {
   @Override
   public void taskStarted(TaskPath path) {
     TransactionStatus status = this.transactionManager.getTransaction(this.transactionDefinition);
-    this.transactionStates.put(path, status);
     this.jdbcTemplate.update(INSERT_TASK_SQL, path.toString(), "RUNNING");
+    this.transactionManager.commit(status);
+
+    // Open a new transaction
+    status = this.transactionManager.getTransaction(this.transactionDefinition);
+    this.transactionStates.put(path, status);
   }
 
   @Override

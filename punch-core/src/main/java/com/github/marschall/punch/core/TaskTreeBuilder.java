@@ -83,7 +83,6 @@ public class TaskTreeBuilder {
     default:
       throw new IllegalStateException("Unsupported node type: " + this.nodeType);
     }
-    task.setTaskPath(TaskPath.root());
     return task;
   }
 

@@ -4,7 +4,7 @@
  *
  * The copyright to the computer program(s) herein is the property of Netcetera AG, Switzerland.
  * The program(s) may be used and/or copied only with the written permission of Netcetera AG or
- * in accordance with the terms and conditions stipulated in the agreement/contract under which 
+ * in accordance with the terms and conditions stipulated in the agreement/contract under which
  * the program(s) have been supplied.
  */
 package com.github.marschall.punch.jdbc;
@@ -25,6 +25,7 @@ import com.github.marschall.punch.core.TaskPath;
 public class DatabaseRecoveryService implements RecoveryService {
 
   private static final String SELECT_TASK_PATH = "SELECT task_path FROM t_task_state WHERE task_state = 'FINISHED'";
+  private static final String CREATE_NEW_TASK_GROUP = "SELECT seq_task_state.nextval FROM DUAL";
 
   private final JdbcTemplate jdbcTemplate;
 
@@ -51,10 +52,16 @@ public class DatabaseRecoveryService implements RecoveryService {
   }
 
   @Override
-  public boolean isFinished(TaskPath path) {
-    return this.getFinishedTasks().contains(path);
+  public int newTaskGroup() {
+    // Need a transaction?
+    return this.jdbcTemplate.queryForInt(CREATE_NEW_TASK_GROUP);
   }
-  
+
+  @Override
+  public boolean isFinished(TaskPath path) {
+    return getFinishedTasks().contains(path);
+  }
+
 
   static enum TaskPathRowMapper implements RowMapper<TaskPath> {
 

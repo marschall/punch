@@ -10,7 +10,6 @@ public class ParallelTaskContainer extends CompositeTask {
 
   @Override
   protected void safeCompute() {
-    this.ensureTaskPathSet();
     invokeAll(this.tasks);
   }
 

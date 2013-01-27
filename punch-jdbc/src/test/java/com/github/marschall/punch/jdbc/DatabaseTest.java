@@ -2,6 +2,7 @@ package com.github.marschall.punch.jdbc;
 
 import java.sql.ResultSet;
 import java.sql.SQLException;
+import java.util.List;
 import java.util.concurrent.TimeUnit;
 
 import org.junit.After;
@@ -15,6 +16,7 @@ import org.springframework.transaction.PlatformTransactionManager;
 
 import com.github.marschall.punch.core.JobTrees;
 import com.github.marschall.punch.core.PunchPool;
+import com.github.marschall.punch.core.RecoveryService;
 import com.github.marschall.punch.core.TaskPath;
 import com.github.marschall.punch.core.TaskStateListener;
 
@@ -37,7 +39,7 @@ public class DatabaseTest {
     this.jdbcTemplate = new JdbcTemplate(this.db);
     PlatformTransactionManager transactionManager = new DataSourceTransactionManager(this.db);
     TaskStateListener taskStateListener = new PersistingTaskStateListener(this.jdbcTemplate, transactionManager);
-    DatabaseRecoveryService recoveryService = new DatabaseRecoveryService(this.jdbcTemplate);
+    RecoveryService recoveryService = new DatabaseRecoveryService(this.jdbcTemplate);
     this.pool = new PunchPool(taskStateListener, recoveryService);
   }
 
@@ -45,6 +47,11 @@ public class DatabaseTest {
   public void after() throws InterruptedException {
     this.pool.shutdown();
     assertTrue(this.pool.awaitTermination(1, TimeUnit.SECONDS));
+    List<TaskState> taskStates = this.jdbcTemplate.query("SELECT * FROM t_task_state", TaskStateRowMapper.INSTANCE);
+    for (TaskState state : taskStates) {
+      System.out.println(state);
+    }
+
     this.db.shutdown();
   }
 
@@ -60,8 +67,8 @@ public class DatabaseTest {
   }
 
   static class TaskState {
-    TaskPath taskPath;
-    String taskStatus;
+    private final TaskPath taskPath;
+    private final String taskStatus;
 
     TaskState(String taskPath, String taskStatus) {
       this.taskPath = TaskPath.fromString(taskPath);
