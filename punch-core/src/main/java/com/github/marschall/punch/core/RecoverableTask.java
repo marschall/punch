@@ -19,11 +19,11 @@ public abstract class RecoverableTask extends RecursiveAction {
   @Override
   protected final void compute() {
     if (!this.finished) {
-      this.ensureTaskPathSet();
       ForkJoinPool pool = getPool();
       if (pool instanceof PunchPool) {
         // pool is not null and not a regular ForkJoinPool
         PunchPool punchPool = (PunchPool) pool;
+        this.ensureTaskPathSet(punchPool.recoveryService);
         recover(punchPool.recoveryService);
         computeAndNotifyListener(punchPool.listener);
       } else {
@@ -33,11 +33,11 @@ public abstract class RecoverableTask extends RecursiveAction {
     }
   }
 
-  void ensureTaskPathSet() {
+  void ensureTaskPathSet(RecoveryService recoveryService) {
     // check-then act is thread safe here because it's executed before
     // the first top level task
     if (this.taskPath == null) {
-      this.setTaskPath(TaskPath.root());
+      this.setTaskPath(TaskPath.root(recoveryService.newTaskGroup()));
     }
   }
 

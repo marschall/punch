@@ -1,5 +1,6 @@
 package com.github.marschall.punch.core;
 
+
 /**
  * The absolute minimum core classes.
  *
@@ -15,9 +16,13 @@ package com.github.marschall.punch.core;
  *
  * Things to consider:
  *  - drop "running" state
+ *  - running the same task instance twice won't work
  *
  * Possible features:
  *  - idempotent tasks that don't require a transaction
  *  - #getDescription() on listanble task
  *  - pass task to listener
+ *  - execution ID:
+ *    - TaskPath.root() is not 0 but a unique ID identifying a task tree.
+ *      This will make the TaskPath a globally unique key.
  */
