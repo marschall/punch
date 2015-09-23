@@ -2,12 +2,11 @@ package com.github.marschall.punch.core;
 
 import java.util.concurrent.ForkJoinPool;
 import java.util.concurrent.TimeUnit;
+import java.util.concurrent.atomic.AtomicInteger;
 
 import org.junit.After;
 import org.junit.Before;
 import org.junit.Test;
-
-import com.github.marschall.punch.util.NullListener;
 
 import static org.junit.Assert.assertTrue;
 
@@ -18,7 +17,7 @@ public class PunchTest {
 
   @Before
   public void before() {
-    this.pool = new PunchPool(NullListener.INSTANCE, AlwaysFinishedRecoveryService.INSTANCE);
+    this.pool = new PunchPool(DebugListener.INSTANCE, AlwaysFinishedRecoveryService.INSTANCE);
   }
 
   @After
@@ -40,12 +39,43 @@ public class PunchTest {
     this.pool.invoke(JobTrees.buildTree());
   }
 
+  enum DebugListener implements TaskStateListener {
+
+    INSTANCE;
+
+    @Override
+    public void taskStarted(TaskPath path) {
+      print(path, "started");
+    }
+    @Override
+    public void taskFinished(TaskPath path) {
+      print(path, "finished");
+    }
+
+    @Override
+    public void taskFailed(TaskPath path) {
+      print(path, "failed");
+    }
+
+    private void print(TaskPath path, String whatHappened) {
+      System.out.println("task " + path + " " + whatHappened);
+    }
+
+  }
+
   enum AlwaysFinishedRecoveryService implements RecoveryService {
     INSTANCE;
+
+    private static final AtomicInteger NEXT_TASK_GROUP = new AtomicInteger();
 
     @Override
     public boolean isFinished(TaskPath path) {
       return true;
+    }
+
+    @Override
+    public int newTaskGroup() {
+      return NEXT_TASK_GROUP.getAndIncrement();
     }
 
   }

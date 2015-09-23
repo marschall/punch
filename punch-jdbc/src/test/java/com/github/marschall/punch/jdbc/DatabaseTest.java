@@ -2,8 +2,7 @@ package com.github.marschall.punch.jdbc;
 
 import java.sql.ResultSet;
 import java.sql.SQLException;
-import java.util.concurrent.ConcurrentHashMap;
-import java.util.concurrent.ConcurrentMap;
+import java.util.List;
 import java.util.concurrent.TimeUnit;
 
 import org.junit.After;
@@ -14,12 +13,10 @@ import org.springframework.jdbc.core.RowMapper;
 import org.springframework.jdbc.datasource.DataSourceTransactionManager;
 import org.springframework.jdbc.datasource.embedded.EmbeddedDatabase;
 import org.springframework.transaction.PlatformTransactionManager;
-import org.springframework.transaction.TransactionDefinition;
-import org.springframework.transaction.TransactionStatus;
-import org.springframework.transaction.support.DefaultTransactionDefinition;
 
 import com.github.marschall.punch.core.JobTrees;
 import com.github.marschall.punch.core.PunchPool;
+import com.github.marschall.punch.core.RecoveryService;
 import com.github.marschall.punch.core.TaskPath;
 import com.github.marschall.punch.core.TaskStateListener;
 
@@ -42,7 +39,7 @@ public class DatabaseTest {
     this.jdbcTemplate = new JdbcTemplate(this.db);
     PlatformTransactionManager transactionManager = new DataSourceTransactionManager(this.db);
     TaskStateListener taskStateListener = new PersistingTaskStateListener(this.jdbcTemplate, transactionManager);
-    DatabaseRecoveryService recoveryService = new DatabaseRecoveryService(this.jdbcTemplate);
+    RecoveryService recoveryService = new DatabaseRecoveryService(this.jdbcTemplate);
     this.pool = new PunchPool(taskStateListener, recoveryService);
   }
 
@@ -50,6 +47,11 @@ public class DatabaseTest {
   public void after() throws InterruptedException {
     this.pool.shutdown();
     assertTrue(this.pool.awaitTermination(1, TimeUnit.SECONDS));
+    List<TaskState> taskStates = this.jdbcTemplate.query("SELECT * FROM t_task_state", TaskStateRowMapper.INSTANCE);
+    for (TaskState state : taskStates) {
+      System.out.println(state);
+    }
+
     this.db.shutdown();
   }
 
@@ -64,47 +66,9 @@ public class DatabaseTest {
     assertEquals(22, finishedCount);
   }
 
-  static class PersistingTaskStateListener implements TaskStateListener {
-
-    private static final String INSERT_TASK_SQL = "INSERT INTO t_task_state(task_path, task_state) VALUES (?, ?)";
-    private static final String UPDATE_TASK_SQL = "UPDATE t_task_state SET task_state = ? WHERE task_path = ?";
-
-    private final JdbcTemplate jdbcTemplate;
-    private final PlatformTransactionManager transactionManager;
-    private final ConcurrentMap<TaskPath, TransactionStatus> transactionStates;
-    private final TransactionDefinition transactionDefinition;
-
-    PersistingTaskStateListener(JdbcTemplate jdbcTemplate, PlatformTransactionManager transactionManager) {
-      this.jdbcTemplate = jdbcTemplate;
-      this.transactionManager = transactionManager;
-      this.transactionStates = new ConcurrentHashMap<>();
-      this.transactionDefinition = new DefaultTransactionDefinition();
-    }
-
-    @Override
-    public void taskStarted(TaskPath path) {
-      TransactionStatus status = this.transactionManager.getTransaction(this.transactionDefinition);
-      this.transactionStates.put(path, status);
-      this.jdbcTemplate.update(INSERT_TASK_SQL, path.toString(), "RUNNING");
-    }
-
-    @Override
-    public void taskFinished(TaskPath path) {
-      this.jdbcTemplate.update(UPDATE_TASK_SQL, "FINISHED", path.toString());
-      TransactionStatus status = this.transactionStates.remove(path);
-      this.transactionManager.commit(status);
-    }
-
-    @Override
-    public void taskFailed(TaskPath path) {
-      TransactionStatus status = this.transactionStates.remove(path);
-      this.transactionManager.rollback(status);
-    }
-  }
-
   static class TaskState {
-    TaskPath taskPath;
-    String taskStatus;
+    private final TaskPath taskPath;
+    private final String taskStatus;
 
     TaskState(String taskPath, String taskStatus) {
       this.taskPath = TaskPath.fromString(taskPath);

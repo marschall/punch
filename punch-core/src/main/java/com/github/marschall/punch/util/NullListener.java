@@ -9,20 +9,14 @@ public enum NullListener implements TaskStateListener {
 
   @Override
   public void taskStarted(TaskPath path) {
-    print(path, "started");
   }
+
   @Override
   public void taskFinished(TaskPath path) {
-    print(path, "finished");
   }
 
   @Override
   public void taskFailed(TaskPath path) {
-    print(path, "failed");
-  }
-
-  private void print(TaskPath path, String whatHappened) {
-    System.out.println("task " + path + " " + whatHappened);
   }
 
 }
